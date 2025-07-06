@@ -1,75 +1,60 @@
 "use client";
-export const dynamic = "force-dynamic";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { flowContractAddress } from "../../utils/contractAddress";
 import abi from "../../utils/abi.json";
-import { useAccount, useWalletClient } from "wagmi";
-import { useState, useRef, useEffect } from "react";
+import { useAccount } from "wagmi";
+import { useState, useRef } from "react";
 import { toast } from "react-hot-toast";
+import { useWalletClient } from "wagmi";
 import { ethers } from "ethers";
 
-export default function PetDetails() {
+function PetDetailsInner() {
   const { address: currentUserAddress } = useAccount();
   const { data: walletClient } = useWalletClient();
   const searchParams = useSearchParams();
-
-  // State initialized with safe defaults
-  const [petId, setPetId] = useState("");
-  const [name, setName] = useState("Unnamed Pet");
-  const [imageSrc, setImageSrc] = useState("");
-  const [metadataUrl, setMetadataUrl] = useState("");
-  const [owner, setOwner] = useState("");
-  const [description, setDescription] = useState("");
-  const [backstory, setBackstory] = useState("");
-  const [multiplier, setMultiplier] = useState("1");
-  const [happiness, setHappiness] = useState("0");
-  const [memePower, setMemePower] = useState("0");
-  const [level, setLevel] = useState("1");
-  const [NftLevel, setNftLevel] = useState("1");
-
   const [hasEvolved, setHasEvolved] = useState(false);
   const [attributes, setAttributes] = useState<any[]>([]);
-  const [currentBackstory, setCurrentBackstory] = useState("");
+  const [petName, setPetName] = useState(
+    searchParams.get("name") || "Unnamed Pet"
+  );
+  const [currentBackstory, setCurrentBackstory] = useState(
+    searchParams.get("backstory") || searchParams.get("description") || ""
+  );
+  
   const [userPrompt, setUserPrompt] = useState("");
   const [newBackstory, setNewBackstory] = useState("");
   const [isLoadingBackstory, setIsLoadingBackstory] = useState(false);
   const [showBackstoryUpdate, setShowBackstoryUpdate] = useState(false);
   const backstoryInputRef = useRef<HTMLTextAreaElement>(null);
-
-  // Extract and set all search params on client only
-  useEffect(() => {
-    if (!searchParams) return;
-    setPetId(searchParams.get("petId") || "");
-    setName(searchParams.get("name") || "Unnamed Pet");
-    setImageSrc(searchParams.get("imageSrc") || "");
-    setMetadataUrl(searchParams.get("metadataUrl") || "");
-    setOwner(searchParams.get("owner") || "");
-    const desc = searchParams.get("description") || "";
-    const bs = searchParams.get("backstory") || desc;
-    setBackstory(bs);
-    setDescription(desc);
-    setCurrentBackstory(bs);
-    setMultiplier(searchParams.get("multiplier") || "1");
-    setHappiness(searchParams.get("stats.happiness") || "0");
-    setMemePower(searchParams.get("stats.memePower") || "0");
-    setLevel(searchParams.get("stats.level") || "1");
-    setNftLevel(searchParams.get("NftLevel") || "1");
-  }, [searchParams]);
-
+  const petId = searchParams.get("petId");
+  const name = searchParams.get("name");
+  const imageSrc = searchParams.get("imageSrc");
+  const metadataUrl = searchParams.get("metadataUrl");
+  const owner = searchParams.get("owner");
+  const description = searchParams.get("description");
+  const multiplier = searchParams.get("multiplier");
+  const backstory = searchParams.get("backstory");
+  const happiness = searchParams.get("stats.happiness");
+  const memePower = searchParams.get("stats.memePower");
+  const level = searchParams.get("stats.level");
+  const NftLevel = searchParams.get("NftLevel");
   const points = Number(multiplier) * (Number(happiness) + Number(memePower));
-  const isCreator =
-    currentUserAddress?.toLowerCase() === owner?.toLowerCase();
+
+  const isCreator = currentUserAddress?.toLowerCase() === owner?.toLowerCase();
 
   const extractTxId = (url: string) => url.split("/").pop()!;
 
   const updateMetadata = async (txId: string, changes: any) => {
     const res = await fetch(`https://gateway.irys.xyz/mutable/${txId}`);
     if (!res.ok) throw new Error("Failed to fetch metadata");
+
     const oldMeta = await res.json();
 
+    // Add/increment attributes
     let updatedAttrs = oldMeta.attributes.map((attr: any) => {
       const updated = changes.attributes?.find(
         (a: any) => a.trait_type === attr.trait_type
@@ -85,6 +70,7 @@ export default function PetDetails() {
       return attr;
     });
 
+    // Add new attributes if not present
     const existingTraits = updatedAttrs.map((a) => a.trait_type);
     const missingAttrs = changes.attributes?.filter(
       (a: any) => !existingTraits.includes(a.trait_type)
@@ -132,70 +118,73 @@ export default function PetDetails() {
       toast.error("Wallet client unavailable");
       throw new Error("Wallet client unavailable");
     }
-
     const toastId = "evolve-status";
     toast.loading("Evolving pet...", { id: toastId });
+    const provider = new ethers.BrowserProvider(walletClient.transport);
+    const signer = await provider.getSigner();
+    const contract = new ethers.Contract(
+      flowContractAddress,
+      abi,
+      signer
+    );
+    const tx = await contract.levelUp(petId)
+    const receipt= await tx.wait();
+    if(receipt.status == 1 && !hasEvolved) {
+     try {
+            const wantsToUpdateBackstory = window.confirm(
+              "Do you want to update the backstory?"
+            );
+            const txId = extractTxId(metadataUrl!);
 
-    try {
-      const provider = new ethers.BrowserProvider(walletClient.transport);
-      const signer = await provider.getSigner();
-      const contract = new ethers.Contract(flowContractAddress, abi, signer);
+            let finalBackstory = currentBackstory;
 
-      const tx = await contract.levelUp(petId);
-      const receipt = await tx.wait();
+            if (wantsToUpdateBackstory) {
+              const prompt = window.prompt(
+                "How should the backstory evolve?",
+                "E.g., Bloop found a mysterious portal to Meme Mountain..."
+              );
 
-      if (receipt.status === 1 && !hasEvolved) {
-        const wantsToUpdateBackstory = window.confirm(
-          "Do you want to update the backstory?"
-        );
+              if (prompt) {
+                const response = await fetch("/api/generate-backstory", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    originalBackstory: currentBackstory,
+                    prompt: prompt,
+                  }),
+                });
 
-        const txId = extractTxId(metadataUrl!);
-        let finalBackstory = currentBackstory;
+                if (response.ok) {
+                  const data = await response.json();
+                  finalBackstory = data.modifiedBackstory;
+                  
+                } else {
+                  throw new Error("Backstory generation failed");
+                }
+              }
+            }
 
-        if (wantsToUpdateBackstory) {
-          const prompt = window.prompt(
-            "How should the backstory evolve?",
-            "E.g., Bloop found a mysterious portal to Meme Mountain..."
-          );
-
-          if (prompt) {
-            const response = await fetch("/api/generate-backstory", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                originalBackstory: currentBackstory,
-                prompt,
-              }),
+            // Update metadata with new level and final backstory
+            await updateMetadata(txId, {
+              description: finalBackstory,
+              attributes: [{ trait_type: "Level", value: 1 }], // increment by 1
             });
 
-            if (response.ok) {
-              const data = await response.json();
-              finalBackstory = data.modifiedBackstory;
-            } else {
-              throw new Error("Backstory generation failed");
-            }
+            setCurrentBackstory(finalBackstory);
+            setHasEvolved(true);
+            toast.success("Pet evolved successfully!", { id: toastId });
+          } catch (err) {
+            console.error("Evolution error:", err);
+            toast.error("Failed to evolve pet", { id: toastId });
+            setHasEvolved(false);
           }
-        }
-
-        await updateMetadata(txId, {
-          description: finalBackstory,
-          attributes: [{ trait_type: "Level", value: 1 }],
-        });
-
-        setCurrentBackstory(finalBackstory);
-        setHasEvolved(true);
-        toast.success("Pet evolved successfully!", { id: toastId });
-      } else {
-        toast.error("Error in contract interaction", {
-          id: "contract-interaction",
-        });
-      }
-    } catch (err) {
-      console.error("Evolution error:", err);
-      toast.error("Failed to evolve pet", { id: "evolve-status" });
-      setHasEvolved(false);
     }
-  };
+    else{
+      toast.error("Error in contract interaction", { id: "contract-interaction" });
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-300 py-12 px-4">
@@ -227,42 +216,76 @@ export default function PetDetails() {
           </div>
 
           <div className="w-full lg:w-1/2 space-y-4">
-            <p className="text-lg font-semibold text-gray-800">Pet ID:</p>
-            <p className="text-md bg-gray-100 text-gray-700 p-2 rounded break-all font-mono">
-              {petId}
-            </p>
+            <div>
+              <p className="text-lg font-semibold text-gray-800">Pet ID:</p>
+              <p className="text-md bg-gray-100 text-gray-700 p-2 rounded break-all font-mono">
+                {petId}
+              </p>
+            </div>
 
-            <p className="text-lg font-semibold text-gray-800">Level:</p>
-            <p className="text-md bg-gray-100 text-gray-700 p-2 rounded">{NftLevel}</p>
+            <div>
+              <p className="text-lg font-semibold text-gray-800">Level</p>
+              <p className="text-md bg-gray-100 text-gray-700 p-2 rounded">
+                {NftLevel}
+              </p>
+            </div>
 
-            <p className="text-lg font-semibold text-gray-800">Happiness ❤️</p>
-            <p className="text-md bg-gray-100 text-gray-700 p-2 rounded">{happiness}</p>
+            <div>
+              <p className="text-lg font-semibold text-gray-800">
+                Happiness ❤️
+              </p>
+              <p className="text-md bg-gray-100 text-gray-700 p-2 rounded">
+                {happiness}
+              </p>
+            </div>
 
-            <p className="text-lg font-semibold text-gray-800">Power ⚡</p>
-            <p className="text-md bg-gray-100 text-gray-700 p-2 rounded">{memePower}</p>
+            <div>
+              <p className="text-lg font-semibold text-gray-800">Power ⚡</p>
+              <p className="text-md bg-gray-100 text-gray-700 p-2 rounded">
+                {memePower}
+              </p>
+            </div>
 
-            <p className="text-lg font-semibold text-gray-800">Multiplier:</p>
-            <p className="text-md bg-gray-100 text-gray-700 p-2 rounded break-all">{multiplier}</p>
+            <div>
+              <p className="text-lg font-semibold text-gray-800">Multiplier:</p>
+              <p className="text-md bg-gray-100 text-gray-700 p-2 rounded break-all">
+                {multiplier}
+              </p>
+            </div>
 
-            <p className="text-lg font-semibold text-gray-800">Points 🔥</p>
-            <p className="text-md bg-gray-100 text-gray-700 p-2 rounded break-all">{points}</p>
+            <div>
+              <p className="text-lg font-semibold text-gray-800">Points 🔥</p>
+              <p className="text-md bg-gray-100 text-gray-700 p-2 rounded break-all">
+                {points}
+              </p>
+            </div>
 
-            <p className="text-lg font-semibold text-gray-800">Creator Address:</p>
-            <p className="text-md bg-gray-100 text-gray-700 p-2 rounded break-all">{owner}</p>
+            <div>
+              <p className="text-lg font-semibold text-gray-800">
+                Creator Address:
+              </p>
+              <p className="text-md bg-gray-100 text-gray-700 p-2 rounded break-all">
+                {owner}
+              </p>
+            </div>
 
-            <p className="text-lg font-semibold text-gray-800">Metadata URL:</p>
-            <Link
-              href={metadataUrl || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-md text-blue-600 hover:underline break-all"
-            >
-              {metadataUrl}
-            </Link>
+            <div>
+              <p className="text-lg font-semibold text-gray-800">
+                Metadata URL:
+              </p>
+              <Link
+                href={metadataUrl ?? "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-md text-blue-600 hover:underline break-all"
+              >
+                {metadataUrl}
+              </Link>
+            </div>
 
             <div className="mt-6">
-              <button
-                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              <button 
+                className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed" 
                 onClick={handleEvolvePet}
                 disabled={!isCreator || points < (Number(level) || 1) * 20}
               >
@@ -275,7 +298,7 @@ export default function PetDetails() {
               )}
               {isCreator && points < (Number(level) || 1) * 20 && (
                 <p className="text-sm text-yellow-600 mt-2">
-                  Insufficient points to evolve.
+                  Insufficient points to evolve{" "}
                 </p>
               )}
             </div>
@@ -283,5 +306,20 @@ export default function PetDetails() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PetDetails() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-300 py-12 px-4 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 font-semibold">Loading pet details...</p>
+        </div>
+      </div>
+    }>
+      <PetDetailsInner />
+    </Suspense>
   );
 }
