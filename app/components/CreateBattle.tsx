@@ -55,7 +55,7 @@ export default function CreateBattle({ walletClient, contractAddress, abi, pets,
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg border-4 border-black">
-      <h2 className="text-2xl font-bold mb-4 font-press-start-2p text-center">Create Battle</h2>
+      <h2 className="text-2xl font-bold mb-4 font-press-start-2p text-center text-black">Create Battle</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
@@ -69,8 +69,8 @@ export default function CreateBattle({ walletClient, contractAddress, abi, pets,
                   <img src={selectedPet1.image} alt={selectedPet1.name} className="w-16 h-16 rounded-lg object-cover" />
                   <div>
                     <p className="font-bold">{selectedPet1.name}</p>
-                    <p className="text-sm">ID: {selectedPet1.tokenId}</p>
-                    <p className="text-sm">Level: {selectedPet1.level}</p>
+                    <p className="text-sm text-black">ID: {selectedPet1.tokenId}</p>
+                    <p className="text-sm text-baclk">Level: {selectedPet1.level}</p>
                   </div>
                 </div>
               </div>
@@ -88,8 +88,8 @@ export default function CreateBattle({ walletClient, contractAddress, abi, pets,
                   }`}
                 >
                   <img src={pet.image} alt={pet.name} className="w-full h-20 object-cover rounded" />
-                  <p className="text-xs font-bold mt-1">ID: {pet.tokenId}</p>
-                  <p className="text-xs">Lvl: {pet.level}</p>
+                  <p className="text-xs font-bold mt-1 text-black">ID: {pet.tokenId}</p>
+                  <p className="text-xs text-black">Lvl: {pet.level}</p>
                 </div>
               ))}
             </div>
@@ -125,8 +125,8 @@ export default function CreateBattle({ walletClient, contractAddress, abi, pets,
                   }`}
                 >
                   <img src={pet.image} alt={pet.name} className="w-full h-20 object-cover rounded" />
-                  <p className="text-xs font-bold mt-1">ID: {pet.tokenId}</p>
-                  <p className="text-xs">Lvl: {pet.level}</p>
+                  <p className="text-xs font-bold mt-1 text-black">ID: {pet.tokenId}</p>
+                  <p className="text-xs text-black">Lvl: {pet.level}</p>
                 </div>
               ))}
             </div>
@@ -137,7 +137,7 @@ export default function CreateBattle({ walletClient, contractAddress, abi, pets,
       <button
         onClick={handleCreateBattle}
         disabled={loading || !selectedPet1 || !selectedPet2}
-        className="w-full mt-6 bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded disabled:opacity-50"
+        className="w-full mt-6 bg-purple-500 hover:bg-purple-600 text-black font-bold py-3 px-4 rounded disabled:opacity-50"
       >
         {loading ? "Creating..." : "Create Battle"}
       </button>
