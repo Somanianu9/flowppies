@@ -122,8 +122,8 @@ export default function BattlesPage() {
         />
         <div className="relative min-h-screen w-full flex items-center justify-center p-4">
           <div className="bg-white bg-opacity-90 rounded-lg shadow-lg p-8 text-center">
-            <h1 className="text-4xl font-bold mb-4 font-press-start-2p">Pet Battles</h1>
-            <p>Please connect your wallet to view battles</p>
+            <h1 className="text-4xl font-bold mb-4 font-press-start-2p text-black">Pet Battles</h1>
+            <p className='text-black'>Please connect your wallet to view battles</p>
           </div>
         </div>
       </div>
@@ -145,7 +145,7 @@ export default function BattlesPage() {
       <div className="relative min-h-screen w-full flex items-center justify-center p-4">
         <div className="w-4/5 min-h-screen overflow-y-auto bg-white bg-opacity-90 rounded-lg shadow-lg p-8">
           
-          <h1 className="text-4xl font-bold mb-8 text-center font-press-start-2p">Pet Battles Arena</h1>
+          <h1 className="text-4xl font-bold mb-8 text-center text-black font-press-start-2p">Pet Battles Arena</h1>
           
           {/* Changed to flex-col layout */}
           <div className="flex flex-col space-y-8">
@@ -164,11 +164,11 @@ export default function BattlesPage() {
             {/* Battles Section */}
             <div className="w-full">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold font-press-start-2p">Active Battles</h2>
+                <h2 className="text-2xl font-bold font-press-start-2p text-black">Active Battles</h2>
                 <button
                   onClick={fetchBattles}
                   disabled={loading}
-                  className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
+                  className="bg-blue-500 hover:bg-blue-600 text-black font-bold py-2 px-4 rounded disabled:opacity-50"
                 >
                   {loading ? "Loading..." : "Refresh"}
                 </button>
