@@ -94,7 +94,7 @@ export default function BattleCard({ battle, pets, walletClient, contractAddress
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg border-4 border-black">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold font-press-start-2p">Battle #{battle.battleId}</h3>
+        <h3 className="text-xl font-bold font-press-start-2p text-black">Battle #{battle.battleId}</h3>
         <span className={`px-3 py-1 rounded text-sm font-bold ${
           battleEnded 
             ? 'bg-red-500 text-white' 
@@ -119,7 +119,7 @@ export default function BattleCard({ battle, pets, walletClient, contractAddress
               className="w-20 h-20 mx-auto rounded-lg object-cover mb-2"
             />
           )}
-          <h4 className="font-bold">{pet1Details?.name || `Pet #${battle.pet1}`}</h4>
+          <h4 className="font-bold text-black">{pet1Details?.name || `Pet #${battle.pet1}`}</h4>
           <p className="text-sm text-gray-600">ID: {battle.pet1}</p>
           <p className="text-sm text-gray-600">Level: {pet1Details?.level || 'N/A'}</p>
           <p className="text-sm text-gray-600">Stakes: {pet1Stakes} FLOW</p>
@@ -135,7 +135,7 @@ export default function BattleCard({ battle, pets, walletClient, contractAddress
               className="w-20 h-20 mx-auto rounded-lg object-cover mb-2"
             />
           )}
-          <h4 className="font-bold">{pet2Details?.name || `Pet #${battle.pet2}`}</h4>
+          <h4 className="font-bold text-black">{pet2Details?.name || `Pet #${battle.pet2}`}</h4>
           <p className="text-sm text-gray-600">ID: {battle.pet2}</p>
           <p className="text-sm text-gray-600">Level: {pet2Details?.level || 'N/A'}</p>
           <p className="text-sm text-gray-600">Stakes: {pet2Stakes} FLOW</p>
@@ -151,7 +151,7 @@ export default function BattleCard({ battle, pets, walletClient, contractAddress
       {!battleEnded && (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-bold mb-2">Select Pet to Stake On:</label>
+            <label className="block text-sm font-bold mb-2 text-black">Select Pet to Stake On:</label>
             <div className="flex gap-2">
               <button
                 onClick={() => setSelectedPet(battle.pet1)}
@@ -177,14 +177,14 @@ export default function BattleCard({ battle, pets, walletClient, contractAddress
           </div>
 
           <div>
-            <label className="block text-sm font-bold mb-2">Stake Amount (FLOW):</label>
+            <label className="block text-sm font-bold mb-2 text-black">Stake Amount (FLOW):</label>
             <input
               type="number"
               step="0.01"
               max="1"
               value={stakeAmount}
               onChange={(e) => setStakeAmount(e.target.value)}
-              className="w-full p-2 border-2 border-black rounded"
+              className="w-full p-2 border-2 border-black rounded text-gray-800"
               placeholder="0.1"
             />
           </div>
